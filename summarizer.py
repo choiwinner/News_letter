@@ -18,13 +18,13 @@ def summarize_content(items, category="뉴스"):
     # 현재 시점에서 gemini-2.0-flash 등의 명칭이 쓰일 수 있으나 요구사항대로 'gemini-3-flash' 지향
     # 실제 API에서 지원하는 모델명 확인 필요 (보통 gemini-1.5-flash가 최신 범용)
     # 여기서는 요구사항에 맞춰 모델 식별자 설정 (실제 동작을 위해 1.5-flash로 폴백하거나 안내 필요할 수 있음)
-    model_name = "gemini-2.0-flash" # 현재 실존하는 가장 최신 모델명으로 설정, 혹은 명시적 요청 반영
+    model_name = "gemini-3-flash-preview" # 현재 실존하는 가장 최신 모델명으로 설정, 혹은 명시적 요청 반영
     
     try:
         model = genai.GenerativeModel(model_name)
     except:
         # 모델명을 찾지 못할 경우 범용 모델로 폴백
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = f"""
     당신은 메모리 반도체 전문가입니다. 다음 제공된 {category} 목록을 바탕으로 주간 브리핑을 작성해 주세요.
