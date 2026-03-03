@@ -8,7 +8,8 @@ dependencies = [
     "arxiv>=2.4.0",
     "feedparser>=6.0.12",
     "google-generativeai>=0.8.6",
+    "googlenewsdecoder>=0.1.7",
     "lxml-html-clean>=0.4.4",
-    "newspaper4k>=0.9.5",
+    "newspaper4k[nlp]>=0.9.5",
     "python-dotenv>=1.2.2",
 ]

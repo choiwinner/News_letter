@@ -47,30 +47,38 @@ def format_as_html(news_summary, paper_summary):
     import re
 
     def process_summary(text):
-        # 1. Image: [URL] 패턴을 찾아서 <img> 태그로 변환
-        # Gemini가 출력한 텍스트에서 Image: 부분을 처리
+        # 1. Image URL 패턴을 더 유연하게 찾기 (4. Image: 또는 그냥 URL)
         processed = []
-        items = text.split('\n\n') # 각 기사별로 분리
+        # 뉴스 항목들을 분리 (번호로 시작하거나 빈 줄로 구분된 경우 대응)
+        items = re.split(r'\n\s*\n|\n(?=\d+\.\s*제목:)', text)
+        
         for item in items:
             if not item.strip(): continue
             
-            # 이미지 URL 추출
+            # 이미지 URL 추출 (4. Image: URL 또는 텍스트 내의 URL 추출)
             img_match = re.search(r'4\. Image:\s*(https?://\S+)', item)
-            item_html = item.replace('\n', '<br>')
-            
-            if img_match:
+            if not img_match:
+                # 4번 형식이 아닐 경우를 대비해 텍스트 내의 일반 이미지 URL 검색 (구글 서버 제외)
+                img_urls = re.findall(r'https?://\S+\.(?:jpg|jpeg|png|gif|webp)(?:\?\S+)?', item, re.IGNORECASE)
+                img_url = next((u for u in img_urls if "googleusercontent.com" not in u and "gstatic.com" not in u), None)
+            else:
                 img_url = img_match.group(1)
-                # Image: 라인을 제거하고 이미지를 상단에 배치
-                item_html = re.sub(r'<br>4\. Image:.*', '', item_html)
+                if "None" in img_url or "googleusercontent.com" in img_url:
+                    img_url = None
+
+            item_html = item.replace('\n', '<br>')
+            # 형식 태그 제거 (번호 등)
+            item_html = re.sub(r'<br>\d+\.\s*Image:.*', '', item_html)
+            
+            if img_url:
                 item_html = f"""
                 <div style="margin-bottom: 15px; text-align: center;">
-                    <img src="{img_url}" alt="News Image" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #eee;">
+                    <a href="{img_url}" target="_blank">
+                        <img src="{img_url}" alt="News Image" style="max-width: 100%; height: auto; max-height: 400px; border-radius: 8px; border: 1px solid #eee; display: inline-block;">
+                    </a>
                 </div>
                 {item_html}
                 """
-            else:
-                # Image: None 이거나 없는 경우 처리
-                item_html = re.sub(r'<br>4\. Image:.*', '', item_html)
                 
             processed.append(f'<div class="item">{item_html}</div>')
         

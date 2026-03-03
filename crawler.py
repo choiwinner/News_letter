@@ -3,7 +3,9 @@ import arxiv
 from datetime import datetime, timedelta
 import urllib.parse
 from newspaper import Article, Config
+from googlenewsdecoder import gnewsdecoder
 import logging
+import requests
 
 # newspaper4k 설정 (타임아웃 등)
 config = Config()
@@ -13,15 +15,64 @@ config.request_timeout = 10
 # newspaper4k 로그 레벨 조정 (불필요한 로그 방지)
 logging.getLogger('newspaper').setLevel(logging.ERROR)
 
-def get_article_image(url):
+def resolve_google_news_url(url):
     """
-    newspaper4k를 사용하여 기사 URL에서 주요 이미지 URL을 추출합니다.
+    Google 뉴스 RSS URL을 디코딩하여 원본 기사 주소를 반환합니다.
     """
     try:
+        # 1. googlenewsdecoder 시도
+        result = gnewsdecoder(url)
+        if result.get("status") and result.get("decoded_url"):
+            return result["decoded_url"]
+        
+        # 2. 실패 시 requests로 리디렉션 추적 (일부 케이스 대응)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, allow_redirects=True, timeout=5)
+        if response.url and "google.com" not in response.url:
+            return response.url
+            
+        return url
+    except Exception as e:
+        print(f"URL 디코딩 실패: {e}")
+        return url
+
+def get_article_image(url):
+    """
+    newspaper4k 및 메타데이터를 사용하여 기사 URL에서 주요 이미지 URL을 추출합니다.
+    """
+    try:
+        if "news.google.com" in url:
+            url = resolve_google_news_url(url)
+            
+        if "google.com" in url and "rss/articles" not in url:
+            return None
+
         article = Article(url, language='ko', config=config)
         article.download()
         article.parse()
-        return article.top_image
+        
+        # 1. newspaper4k의 기본 top_image 시도
+        image = article.top_image
+        
+        # 2. 실패 시 OpenGraph 또는 Twitter 메타데이터 직접 확인
+        if not image or "googleusercontent.com" in image or "gstatic.com" in image:
+            image = article.meta_data.get('og', {}).get('image')
+            if not image:
+                image = article.meta_data.get('twitter', {}).get('image')
+        
+        # 3. 절대 경로 확인 및 구글 서버 이미지 필터링
+        if image:
+            if not image.startswith('http'):
+                # 상대 경로인 경우 기본 URL 결합 (간단한 처리)
+                from urllib.parse import urljoin
+                image = urljoin(url, image)
+                
+            if "googleusercontent.com" in image or "gstatic.com" in image:
+                return None
+            
+        return image
     except Exception as e:
         print(f"이미지 추출 실패 ({url}): {e}")
         return None
