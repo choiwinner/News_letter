@@ -6,6 +6,13 @@ from newspaper import Article, Config
 from googlenewsdecoder import gnewsdecoder
 import logging
 import requests
+import nltk
+
+# NLTK 리소스 다운로드 (GitHub Actions 등 클린 환경 대응)
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab', quiet=True)
 
 # newspaper4k 설정 (타임아웃 등)
 config = Config()
