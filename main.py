@@ -3,6 +3,7 @@ from summarizer import summarize_content
 from mailer import send_newsletter, format_as_html
 import os
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -25,6 +26,8 @@ def main():
     # 4. LLM 요약 (Gemini)
     print("Gemini를 사용해 요약 생성 중...")
     news_summary = summarize_content(news_items, category="주요 뉴스")
+    # 60초 동안 프로세스를 중단합니다.
+    time.sleep(60)
     paper_summary = summarize_content(paper_items, category="주요 논문")
     
     # 5. HTML 뉴스레터 생성
