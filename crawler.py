@@ -84,7 +84,7 @@ def get_article_image(url):
         print(f"이미지 추출 실패 ({url}): {e}")
         return None
 
-def get_google_news(keywords, days=7):
+def get_google_news(keywords, days=7, max_results=10):
     """
     구글 뉴스 RSS를 통해 키워드 관련 뉴스를 가져옵니다.
     """
@@ -97,9 +97,8 @@ def get_google_news(keywords, days=7):
     feed = feedparser.parse(rss_url)
     results = []
     
-    for entry in feed.entries:
-        # 뉴스 기사의 실제 원본 URL을 찾기 위해 처리 (구글 뉴스 리다이렉션 고려 가능)
-        # newspaper4k는 리다이렉션된 URL도 어느 정도 처리함
+    for entry in feed.entries[:max_results]:
+        # 뉴스 기사의 실제 원본 URL을 찾기 위해 처리
         image_url = get_article_image(entry.link)
         
         results.append({

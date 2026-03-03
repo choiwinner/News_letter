@@ -11,7 +11,7 @@ def main():
     print("메모리 반도체 동향 리서치 시작...")
     
     # 1. 뉴스 데이터 수집
-    news_items = get_google_news("HBM 메모리 반도체 하이닉스 삼성전자 마이크론", days=7)
+    news_items = get_google_news("HBM 메모리 반도체 하이닉스 삼성전자 마이크론", days=7,max_results=10)
     print(f"수집된 뉴스 개수: {len(news_items)}")
     
     # 2. 논문 데이터 수집
