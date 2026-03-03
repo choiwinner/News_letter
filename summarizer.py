@@ -6,21 +6,37 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 load_dotenv()
 
+import time
+
+# RPM 제한을 위한 마지막 호출 시간 기록
+last_call_time = 0
+
 @retry(
     stop=stop_after_attempt(5),
     wait=wait_exponential(multiplier=1, min=4, max=60),
-    retry=retry_if_exception_type(errors.ClientError), # 429 에러는 ClientError 범주에 포함됨
+    retry=retry_if_exception_type(errors.ClientError),
     reraise=True
 )
 def generate_content_with_retry(client, model_name, prompt):
     """
     할당량 초과(429) 시 재시도를 포함하여 콘텐츠를 생성합니다.
+    분당 요청 제한(RPM 5)을 위해 호출 전 대기 시간을 가집니다.
     """
+    global last_call_time
+    
+    # 마지막 호출로부터 최소 15초(RPM 4 목표)가 경과했는지 확인
+    elapsed = time.time() - last_call_time
+    if elapsed < 15:
+        wait_time = 15 - elapsed
+        print(f"RPM 제한을 위해 {wait_time:.1f}초 대기 중...")
+        time.sleep(wait_time)
+        
     try:
         response = client.models.generate_content(
             model=model_name,
             contents=prompt
         )
+        last_call_time = time.time() # 성공적으로 호출한 시간 기록
         return response.text
     except errors.ClientError as e:
         if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):

@@ -56,29 +56,36 @@ def format_as_html(news_summary, paper_summary):
             if not item.strip(): continue
             
             # 이미지 URL 추출 (4. Image: URL 또는 텍스트 내의 URL 추출)
-            img_match = re.search(r'4\. Image:\s*(https?://\S+)', item)
+            # 이미지 URL 추출 (4. Image: 또는 Image: 형식 모두 대응)
+            img_match = re.search(r'(?:\d+\.\s*)?Image:\s*(https?://\S+)', item, re.IGNORECASE)
             if not img_match:
-                # 4번 형식이 아닐 경우를 대비해 텍스트 내의 일반 이미지 URL 검색 (구글 서버 제외)
+                # 일반적인 URL 검색 (구글 서버 제외)
                 img_urls = re.findall(r'https?://\S+\.(?:jpg|jpeg|png|gif|webp)(?:\?\S+)?', item, re.IGNORECASE)
                 img_url = next((u for u in img_urls if "googleusercontent.com" not in u and "gstatic.com" not in u), None)
             else:
-                img_url = img_match.group(1)
+                img_url = img_match.group(1).strip()
                 if "None" in img_url or "googleusercontent.com" in img_url:
                     img_url = None
 
             item_html = item.replace('\n', '<br>')
-            # 형식 태그 제거 (번호 등)
-            item_html = re.sub(r'<br>\d+\.\s*Image:.*', '', item_html)
+            # 형식 태그 제거 (번호 등 모든 Image 라인 제거)
+            item_html = re.sub(r'(<br>)?(?:\d+\.\s*)?Image:.*', '', item_html, flags=re.IGNORECASE)
             
             if img_url:
                 item_html = f"""
-                <div style="margin-bottom: 15px; text-align: center;">
-                    <a href="{img_url}" target="_blank">
-                        <img src="{img_url}" alt="News Image" style="max-width: 100%; height: auto; max-height: 400px; border-radius: 8px; border: 1px solid #eee; display: inline-block;">
-                    </a>
+                <div class="item-content">
+                    <div class="item-image">
+                        <a href="{img_url}" target="_blank">
+                            <img src="{img_url}" alt="News Image">
+                        </a>
+                    </div>
+                    <div class="item-text">
+                        {item_html}
+                    </div>
                 </div>
-                {item_html}
                 """
+            else:
+                item_html = f'<div class="item-text">{item_html}</div>'
                 
             processed.append(f'<div class="item">{item_html}</div>')
         
@@ -91,19 +98,32 @@ def format_as_html(news_summary, paper_summary):
     <html>
     <head>
         <style>
-            body {{ font-family: 'Malgun Gothic', sans-serif; line-height: 1.6; color: #333; background-color: #f4f7f6; }}
-            .container {{ max-width: 700px; margin: 20px auto; padding: 30px; background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-            h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 15px; text-align: center; }}
-            h2 {{ color: #2980b9; margin-top: 40px; border-left: 5px solid #3498db; padding-left: 15px; }}
-            .item {{ margin-bottom: 30px; padding: 20px; background: #ffffff; border: 1px solid #e1e8ed; border-radius: 8px; }}
-            .footer {{ margin-top: 50px; font-size: 0.85em; color: #7f8c8d; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }}
-            img {{ display: block; margin: 0 auto 15px; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f0f2f5; margin: 0; padding: 20px; }}
+            .container {{ max-width: 800px; margin: 0 auto; padding: 30px; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }}
+            h1 {{ color: #1a365d; border-bottom: 4px solid #3182ce; padding-bottom: 15px; text-align: center; font-size: 2.2em; letter-spacing: -1px; }}
+            h2 {{ color: #2d3748; margin-top: 40px; border-left: 6px solid #3182ce; padding-left: 15px; font-size: 1.5em; }}
+            
+            .item {{ margin-bottom: 25px; border: 1px solid #e1e8ed; border-radius: 10px; overflow: hidden; background-color: #ffffff; transition: transform 0.2s; }}
+            .item:hover {{ border-color: #3182ce; box-shadow: 0 4px 12px rgba(49, 130, 206, 0.1); }}
+            
+            .item-content {{ display: flex; align-items: flex-start; gap: 20px; padding: 20px; }}
+            .item-image {{ flex: 0 0 200px; max-width: 200px; }}
+            .item-image img {{ width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }}
+            .item-text {{ flex: 1; font-size: 0.95em; color: #4a5568; }}
+            
+            .footer {{ margin-top: 60px; font-size: 0.85em; color: #718096; text-align: center; border-top: 2px solid #edf2f7; padding-top: 30px; }}
+            
+            @media (max-width: 600px) {{
+                .item-content {{ flex-direction: column; }}
+                .item-image {{ flex: 0 0 auto; max-width: 100%; }}
+                .item-image img {{ height: auto; max-height: 250px; }}
+            }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🚀 주간 HBM & 메모리 반도체 동향</h1>
-            <p style="text-align: center; color: #7f8c8d;">이 리포트는 AI(Gemini 3 Flash)를 통해 수집 및 분석되었습니다.</p>
+            <h1>🚀 주간 기술 & 반도체 리포트</h1>
+            <p style="text-align: center; color: #718096; font-size: 1.1em; margin-bottom: 40px;">DeepMind Gemini 3 Flash 기반 선별 브리핑</p>
             
             <h2>📰 주요 뉴스 (Core News)</h2>
             {news_html}
@@ -112,8 +132,8 @@ def format_as_html(news_summary, paper_summary):
             {paper_html}
 
             <div class="footer">
-                © 2026 Memory Trends Weekly | Generated by Google Gemini Flash<br>
-                본 메일은 수신 동의를 하신 분들께 발송되는 정기 기술 브리핑입니다.
+                <strong>© 2026 Tech Trends Weekly</strong><br>
+                AI 분석 및 자동 생성 리포트 | 수신거부: 설정 페이지
             </div>
         </div>
     </body>
