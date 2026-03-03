@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def summarize_content(items, category="뉴스"):
-    """
+    """GEMINI_API_KEY
     수집된 항목들을 Gemini 3 Flash를 사용하여 요약합니다.
     """
     api_key = os.getenv("GEMINI_API_KEY")
@@ -33,6 +33,7 @@ def summarize_content(items, category="뉴스"):
     1. 제목: [기사/논문의 핵심 내용을 담은 한글 제목]
     2. 요약: [내용을 2-3문장으로 핵심 요약]
     3. URL: [제공된 원본 URL]
+    4. Image: [제공된 image_url이 있다면 그 URL, 없다면 'None']
     
     언어는 한국어여야 합니다. 전문적이고 분석적인 톤을 유지하세요.
     최근 HBM(고대역폭 메모리) 및 주요 메모리 반도체 동향에 집중해 주세요.

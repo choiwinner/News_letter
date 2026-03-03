@@ -2,6 +2,29 @@ import feedparser
 import arxiv
 from datetime import datetime, timedelta
 import urllib.parse
+from newspaper import Article, Config
+import logging
+
+# newspaper4k 설정 (타임아웃 등)
+config = Config()
+config.browser_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+config.request_timeout = 10
+
+# newspaper4k 로그 레벨 조정 (불필요한 로그 방지)
+logging.getLogger('newspaper').setLevel(logging.ERROR)
+
+def get_article_image(url):
+    """
+    newspaper4k를 사용하여 기사 URL에서 주요 이미지 URL을 추출합니다.
+    """
+    try:
+        article = Article(url, language='ko', config=config)
+        article.download()
+        article.parse()
+        return article.top_image
+    except Exception as e:
+        print(f"이미지 추출 실패 ({url}): {e}")
+        return None
 
 def get_google_news(keywords, days=7):
     """
@@ -17,11 +40,16 @@ def get_google_news(keywords, days=7):
     results = []
     
     for entry in feed.entries:
+        # 뉴스 기사의 실제 원본 URL을 찾기 위해 처리 (구글 뉴스 리다이렉션 고려 가능)
+        # newspaper4k는 리다이렉션된 URL도 어느 정도 처리함
+        image_url = get_article_image(entry.link)
+        
         results.append({
             "title": entry.title,
             "link": entry.link,
             "published": entry.published,
-            "source": "Google News"
+            "source": "Google News",
+            "image_url": image_url
         })
     return results
 
