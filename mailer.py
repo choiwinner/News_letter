@@ -79,8 +79,8 @@ def format_as_html(news_summary, paper_summary):
                     if img_url and ("googleusercontent.com" in img_url or "gstatic.com" in img_url):
                         img_url = None
 
-            # URL 추출 및 본문 내 URL 안내 제거
-            url_match = re.search(r'3\.\s*URL:\s*(\S+)', item, re.IGNORECASE)
+            # URL 추출 및 본문 내 URL 안내 제거 (번호가 없거나 다른 경우에도 대응)
+            url_match = re.search(r'(?:\d+\.\s*)?URL:\s*(\S+)', item, re.IGNORECASE)
             article_url = "#"
             if url_match:
                 raw_url = url_match.group(1)
