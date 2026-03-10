@@ -79,17 +79,24 @@ def format_as_html(news_summary, paper_summary):
                     if img_url and ("googleusercontent.com" in img_url or "gstatic.com" in img_url):
                         img_url = None
 
-            # 본문 내 URL 정리
+            # URL 추출 및 본문 내 URL 안내 제거
             url_match = re.search(r'3\.\s*URL:\s*(\S+)', item, re.IGNORECASE)
             article_url = "#"
             if url_match:
                 raw_url = url_match.group(1)
                 article_url = clean_url(raw_url)
-                item = item.replace(raw_url, article_url)
 
+            # 본문 내 URL 및 '더 알아보기' 문구 제거
             item_html = item.replace('\n', '<br>')
-            # 형식 태그 제거
+            # 형식 태그 및 URL 라벨 제거 (URL 라벨 줄 전체 제거)
             item_html = re.sub(r'(<br>)?(?:\d+\.\s*)?Image:.*', '', item_html, flags=re.IGNORECASE)
+            item_html = re.sub(r'(<br>)?(?:\d+\.\s*)?URL:.*', '', item_html, flags=re.IGNORECASE)
+            
+            # 본문 내 '더 알아보기' 텍스트 제거 (중복 방지)
+            item_html = item_html.replace('더 알아보기', '')
+            
+            # 불필요한 공백/줄바꿈 정리
+            item_html = re.sub(r'(<br>\s*)+', '<br>', item_html).strip('<br> ')
             
             # 카드 레이아웃 (테이블 기반)
             if img_url:
@@ -158,9 +165,8 @@ def format_as_html(news_summary, paper_summary):
     <body>
         <table role="presentation" class="content-container" align="center">
             <!-- 헤더 섹션 -->
-            <tr>
                 <td style="padding: 40px 20px; text-align: center; background-color: #1a73e8;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; letter-spacing: -1px; font-weight: 800;">Daily Insight News</h1>
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; letter-spacing: -1px; font-weight: 800;">Weekly Insight News</h1>
                     <p style="margin: 10px 0 0; color: #e8f0fe; font-size: 14px; opacity: 0.9;">{current_date} | Gemini AI 가 선별한 최신 동향 전문 브리핑</p>
                 </td>
             </tr>
