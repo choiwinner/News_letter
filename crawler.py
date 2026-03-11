@@ -9,6 +9,7 @@ import requests
 import nltk
 import time
 import random
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 # NLTK 리소스 다운로드 (GitHub Actions 등 클린 환경 대응)
 try:
@@ -141,9 +142,16 @@ def get_google_news(keywords, days=7, max_results=10):
         })
     return results
 
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=30),
+    retry=retry_if_exception_type(arxiv.HTTPError),
+    reraise=True
+)
 def get_arxiv_papers(keywords, max_results=5):
     """
-    arXiv API를 통해 관련 논문을 가져옵니다.
+    arxiv API를 통해 관련 논문을 가져옵니다.
+    tenacity를 사용하여 HTTP 429/503 오류 시 재시도합니다.
     """
     search = arxiv.Search(
         query=keywords,
@@ -152,15 +160,18 @@ def get_arxiv_papers(keywords, max_results=5):
     )
     
     results = []
-    for result in search.results():
-        # 최근 7일 이내 논문인지 확인 (필요시 조절)
-        results.append({
-            "title": result.title,
-            "link": result.entry_id,
-            "published": result.published.strftime("%Y-%m-%d"),
-            "summary": result.summary, # LLM 요약을 위해 원문 요약 포함
-            "source": "arXiv"
-        })
+    try:
+        for result in search.results():
+            results.append({
+                "title": result.title,
+                "link": result.entry_id,
+                "published": result.published.strftime("%Y-%m-%d"),
+                "summary": result.summary,
+                "source": "arxiv"
+            })
+    except arxiv.HTTPError as e:
+        print(f"arxiv API 오류 (상태 코드 {e.status}): {e}")
+        raise e
     return results
 
 if __name__ == "__main__":
