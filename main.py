@@ -28,6 +28,8 @@ def main():
     print("Gemini를 사용해 요약 생성 중...")
     news_summary = summarize_content(news_items, category="주요 뉴스")
 
+    # 60초 대기 (다음 API 호용 전 RPM 제한 회피)
+    time.sleep(60)
     # 5. 지식 그래프 생성 (뉴스 요약 후 RPM 대기 시간 활용)
     graph_base64 = generate_knowledge_graph(news_items)
 
