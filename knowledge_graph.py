@@ -7,6 +7,10 @@ import base64
 import io
 import os
 import re
+import matplotlib
+matplotlib.use("Agg")  # GUI 없는 환경에서 렌더링
+import matplotlib.pyplot as plt
+import koreanize_matplotlib
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -68,13 +72,12 @@ def build_and_render_graph(graph_data: dict) -> str | None:
     그래프 데이터가 비어 있으면 None을 반환합니다.
     """
     import networkx as nx
-    import matplotlib
-    matplotlib.use("Agg")  # GUI 없는 환경에서 렌더링
-    import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
 
-    # 한글 폰트 설정 (koreanize-matplotlib 사용)
-    import koreanize_matplotlib
+    # 한글 폰트 설정 (koreanize-matplotlib에 의해 NanumGothic 등이 자동 설정됨)
+    # 하지만 명확성을 위해 rcParams를 다시 확인하고 설정
+    plt.rcParams["axes.unicode_minus"] = False
+    _selected_font = "NanumGothic"
 
     nodes = graph_data.get("nodes", [])
     edges = graph_data.get("edges", [])
@@ -146,7 +149,8 @@ def build_and_render_graph(graph_data: dict) -> str | None:
         G, pos, ax=ax,
         font_size=9,
         font_color="white",
-        font_weight="bold"
+        font_weight="bold",
+        font_family=_selected_font
     )
 
     # 엣지 레이블
@@ -156,7 +160,8 @@ def build_and_render_graph(graph_data: dict) -> str | None:
         edge_labels=edge_labels,
         font_size=8,
         font_color="#F0E68C",
-        bbox=dict(boxstyle="round,pad=0.2", fc="#2C3E50", alpha=0.7, ec="none")
+        bbox=dict(boxstyle="round,pad=0.2", fc="#2C3E50", alpha=0.7, ec="none"),
+        font_family=_selected_font
     )
 
     # 범례
