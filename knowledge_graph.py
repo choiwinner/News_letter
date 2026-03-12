@@ -73,31 +73,8 @@ def build_and_render_graph(graph_data: dict) -> str | None:
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
 
-    # 한글 폰트 설정
-    from matplotlib import font_manager
-    _CANDIDATE_FONTS = ["Malgun Gothic", "Apple SD Gothic Neo", "NanumGothic", "NanumBarunGothic", "Dotum", "Gulim"]
-    _selected_font = None
-    
-    # 시스템에 설치된 폰트 목록 확인하여 실제 존재하는지 체크
-    system_fonts = [f.name for f in font_manager.fontManager.ttflist]
-    for font_name in _CANDIDATE_FONTS:
-        if font_name in system_fonts:
-            _selected_font = font_name
-            break
-    
-    if not _selected_font:
-        # 맑은 고딕이 목록에 없을 경우 직접 파일 경로로 시도 (Windows 표준 경로)
-        if os.path.exists("C:\\Windows\\Fonts\\malgun.ttf"):
-            font_manager.fontManager.addfont("C:\\Windows\\Fonts\\malgun.ttf")
-            _selected_font = "Malgun Gothic"
-
-    if _selected_font:
-        plt.rcParams["font.family"] = _selected_font
-        print(f"  사용된 폰트: {_selected_font}")
-    else:
-        print("  경고: 한글 폰트를 찾지 못했습니다. 글자가 깨질 수 있습니다.")
-    
-    plt.rcParams["axes.unicode_minus"] = False
+    # 한글 폰트 설정 (koreanize-matplotlib 사용)
+    import koreanize_matplotlib
 
     nodes = graph_data.get("nodes", [])
     edges = graph_data.get("edges", [])
@@ -164,24 +141,22 @@ def build_and_render_graph(graph_data: dict) -> str | None:
         alpha=0.95,
     )
 
-    # 노드 레이블 (폰트 명시)
+    # 노드 레이블
     nx.draw_networkx_labels(
         G, pos, ax=ax,
         font_size=9,
         font_color="white",
-        font_weight="bold",
-        font_family=_selected_font if _selected_font else None
+        font_weight="bold"
     )
 
-    # 엣지 레이블 (폰트 명시)
+    # 엣지 레이블
     edge_labels = nx.get_edge_attributes(G, "relation")
     nx.draw_networkx_edge_labels(
         G, pos, ax=ax,
         edge_labels=edge_labels,
         font_size=8,
         font_color="#F0E68C",
-        bbox=dict(boxstyle="round,pad=0.2", fc="#2C3E50", alpha=0.7, ec="none"),
-        font_family=_selected_font if _selected_font else None
+        bbox=dict(boxstyle="round,pad=0.2", fc="#2C3E50", alpha=0.7, ec="none")
     )
 
     # 범례
